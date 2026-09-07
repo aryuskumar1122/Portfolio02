@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Aryus Kumar Samal — AI Engineer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  /* ============================================================
+     RESET / BASE - Vibrant AI Theme
+     ============================================================ */
+  *, *::before, *::after { box-sizing: border-box; }
+  html, body {
+    height: 100%;
+    margin: 0;
+    overflow: hidden;
+    background: #030308;
+  }
+  body {
+    font-family: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
+    color: var(--ink);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+  h1, h2, h3 { font-family: 'Space Grotesk', sans-serif; margin: 0; font-weight: 500; }
+  p { margin: 0; }
+  a { color: inherit; text-decoration: none; }
+
+  :root{
+    --bg: #030308;
+    --surface: #0a0b16;
+    --ink: #e2e8f0;
+    --muted: #8b94b0;
+    --line: rgba(100, 120, 255, 0.15);
+    --accent: #00e5ff;
+    --accent-secondary: #9d00ff;
+    --accent-soft: rgba(0, 229, 255, 0.15);
+    --ease: cubic-bezier(.22,1,.36,1);
+    --radius: 420px;
+    --side-pad: clamp(24px, 8vw, 120px);
+  }
+
+  ::selection { background: var(--accent-secondary); color: #fff; }
+  :focus-visible { outline: 1.5px solid var(--accent); outline-offset: 4px; }
+
+  body.has-fine-pointer.cursor-ready,
+  body.has-fine-pointer.cursor-ready a,
+  body.has-fine-pointer.cursor-ready button { cursor: none; }
+
+  /* ============================================================
+     PRELOADER & CUSTOM CURSOR
+     ============================================================ */
+  #preloader{
+    position: fixed; inset: 0; z-index: 9998; /* Increased so it's above the modal during load */
+    background: var(--bg);
+    display: flex; align-items: center; justify-content: center;
+    transition: opacity .8s var(--ease), visibility .8s var(--ease);
+  }
+  #preloader span { font-family: 'Space Grotesk', sans-serif; font-size: 1.1rem; color: var(--accent); letter-spacing: 0.1em; text-transform: uppercase; }
+  #preloader.hidden { opacity: 0; visibility: hidden; pointer-events: none; }
+
+  .cursor-dot, .cursor-ring {
+    position: fixed; top: 0; left: 0;
+    border-radius: 50%;
+    pointer-events: none; 
+    z-index: 9999; /* Increased to stay above the modal overlay */
+    opacity: 0;
+    transition: opacity .4s ease, width .35s var(--ease), height .35s var(--ease), background .35s ease, border-color .35s ease;
+    transform: translate(-50%, -50%);
+    will-change: transform;
+  }
+  .cursor-dot { width: 6px; height: 6px; background: var(--accent); box-shadow: 0 0 10px var(--accent); }
+  .cursor-ring { width: 34px; height: 34px; border: 1px solid rgba(0,229,255,0.6); mix-blend-mode: screen; }
+  .cursor-dot.visible, .cursor-ring.visible { opacity: 1; }
+  .cursor-ring.is-hover { width: 64px; height: 64px; border-color: var(--accent-secondary); background: rgba(157, 0, 255, 0.1); }
+  .cursor-ring.is-drag { width: 84px; height: 84px; background: var(--accent-soft); border-color: var(--accent); }
+  
+  @media (pointer: coarse) { .cursor-dot, .cursor-ring { display: none; } }
+
+  /* ============================================================
+     UI CONTROLS
+     ============================================================ */
+  #soundToggle {
+    position: fixed; top: clamp(18px, 3vw, 32px); right: clamp(18px, 3vw, 32px);
+    z-index: 500; width: 44px; height: 44px; border-radius: 50%;
+    border: 1px solid var(--line); background: rgba(10,11,22,0.6);
+    backdrop-filter: blur(8px); color: var(--accent);
+    display: flex; align-items: center; justify-content: center; cursor: pointer;
+    transition: border-color .3s ease, background .3s ease, transform .3s ease;
+  }
+  #soundToggle:hover { border-color: var(--accent); transform: scale(1.05); box-shadow: 0 0 15px var(--accent-soft); }
+  #soundToggle svg { width: 18px; height: 18px; }
+
+  .progress-nav {
+    position: fixed; right: clamp(18px, 3vw, 34px); top: 50%;
+    transform: translateY(-50%); z-index: 500; display: flex; flex-direction: column; gap: 14px;
+  }
+  .progress-nav i { width: 6px; height: 6px; border-radius: 50%; background: var(--line); transition: background .4s ease, transform .4s ease, box-shadow .4s ease; }
+  .progress-nav i.active { background: var(--accent); transform: scale(1.6); box-shadow: 0 0 8px var(--accent); }
+  @media (max-width: 720px){ .progress-nav{ display: none; } }
+
+  /* ============================================================
+     LAYOUT & SECTIONS
+     ============================================================ */
+  #bg-canvas { position: fixed; inset: 0; z-index: 0; display: block; mix-blend-mode: screen; pointer-events: none; }
+  
+  .scroll-container {
+    position: relative; z-index: 1; height: 100vh; height: 100dvh;
+    overflow-y: scroll; scroll-snap-type: y mandatory; scroll-behavior: smooth; scrollbar-width: none;
+  }
+  .scroll-container::-webkit-scrollbar { display: none; }
+
+  .section {
+    position: relative; height: 100vh; height: 100dvh; width: 100%;
+    scroll-snap-align: start; display: flex; flex-direction: column; justify-content: center;
+    padding: 0 var(--side-pad);
+  }
+
+  .hero-copy h1 { font-size: clamp(2.6rem, 6.6vw, 5.6rem); line-height: 1.1; letter-spacing: -0.02em; }
+  .hero-copy h1 span {
+    background: linear-gradient(90deg, var(--accent), var(--accent-secondary));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .hero-copy p { margin-top: 22px; max-width: 50ch; font-size: clamp(1rem, 1.3vw, 1.2rem); line-height: 1.6; color: var(--muted); }
+  
+  .about-grid { display: grid; grid-template-columns: 1.3fr 1fr; gap: clamp(40px, 8vw, 120px); max-width: 1200px; align-items: start; }
+  .about-grid h2 { font-size: clamp(2.1rem, 4.4vw, 3.2rem); line-height: 1.1; }
+  .about-grid .about-desc { margin-top: 20px; max-width: 56ch; font-size: 1.05rem; line-height: 1.7; color: var(--muted); }
+  .about-grid .about-desc p { margin-bottom: 16px; }
+  .skills-container h3 { font-size: 1.2rem; color: var(--ink); margin: 24px 0 12px 0; }
+  .skills { display: flex; flex-wrap: wrap; gap: 8px; }
+  .skills span { font-size: .85rem; padding: 6px 12px; border: 1px solid var(--line); border-radius: 4px; color: var(--accent); background: rgba(0, 229, 255, 0.05); }
+
+  /* ---------- PROJECTS CAROUSEL ---------- */
+  .section--projects { overflow: hidden; align-items: center; }
+  .projects-header { width: 100%; max-width: 1200px; align-self: flex-start; margin-bottom: clamp(20px, 4vh, 40px); }
+  .projects-header h2 { font-size: clamp(2.1rem, 4.4vw, 3.2rem); }
+  .carousel-hint { margin-top: 12px; font-size: .92rem; color: var(--muted); transition: color .3s ease; }
+  .carousel-hint.is-active { color: var(--accent); }
+
+  .carousel-stage {
+    position: relative; width: min(92vw, 980px); height: clamp(320px, 46vh, 440px);
+    perspective: 1500px; opacity: 0; transform: scale(.9);
+    transition: opacity 1.1s var(--ease), transform 1.1s var(--ease);
+  }
+  .carousel-stage.revealed { opacity: 1; transform: scale(1); }
+  .carousel { position: absolute; inset: 0; transform-style: preserve-3d; }
+
+  .project-card {
+    position: absolute; top: 50%; left: 50%; width: min(65vw, 320px); height: clamp(260px, 36vh, 320px);
+    transform: translate(-50%,-50%) rotateY(calc(360deg / var(--total) * var(--i))) translateZ(var(--radius)) scale(var(--card-scale, 1)) scale(var(--hover-boost, 1));
+    background: var(--surface); border: 1px solid var(--line); border-top: 3px solid var(--card-accent, var(--accent));
+    border-radius: 8px; padding: 26px 24px; display: flex; flex-direction: column; justify-content: space-between;
+    backface-visibility: hidden; -webkit-backface-visibility: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    cursor: pointer;
+  }
+  .project-card h3 { font-size: 1.28rem; line-height: 1.25; color: #fff; }
+  .project-card p { margin-top: 10px; font-size: .85rem; line-height: 1.5; color: var(--muted); display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }
+  .project-card .tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 14px; }
+  .project-card .tags span { font-size: .72rem; color: var(--ink); border: 1px solid var(--line); border-radius: 3px; padding: 3px 8px; }
+  .project-card .view-more { margin-top: auto; padding-top: 16px; font-size: 0.85rem; color: var(--accent); text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; }
+
+  /* ---------- OVERLAY / MODAL ---------- */
+  .modal-overlay {
+    position: fixed; inset: 0; z-index: 8000; /* Maintained below custom cursor (9999) */
+    background: rgba(3, 3, 8, 0.85); backdrop-filter: blur(12px);
+    display: flex; align-items: center; justify-content: center;
+    opacity: 0; visibility: hidden; transition: opacity 0.4s var(--ease), visibility 0.4s var(--ease);
+    padding: var(--side-pad);
+  }
+  .modal-overlay.active { opacity: 1; visibility: visible; }
+  .modal-content {
+    background: var(--surface); border: 1px solid var(--line); border-top: 4px solid var(--accent);
+    border-radius: 12px; width: 100%; max-width: 680px; padding: clamp(24px, 5vw, 48px);
+    transform: translateY(40px); transition: transform 0.4s var(--ease);
+    position: relative; box-shadow: 0 20px 50px rgba(0,0,0,0.8);
+  }
+  .modal-overlay.active .modal-content { transform: translateY(0); }
+  .modal-close {
+    position: absolute; top: 24px; right: 24px; background: none; border: none; color: var(--muted);
+    cursor: pointer; padding: 8px; transition: color 0.2s ease;
+  }
+  .modal-close:hover { color: var(--accent); }
+  .modal-body h3 { font-size: 2rem; color: #fff; margin-bottom: 12px; }
+  .modal-body .modal-tags { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 24px; }
+  .modal-body .modal-tags span { font-size: .8rem; color: var(--accent-secondary); border: 1px solid var(--line); border-radius: 4px; padding: 4px 10px; }
+  .modal-body .modal-desc { font-size: 1rem; line-height: 1.7; color: var(--ink); }
+  .modal-body .modal-desc ul { margin-top: 16px; padding-left: 20px; color: var(--muted); }
+  .modal-body .modal-desc li { margin-bottom: 10px; }
+
+  /* ---------- CONTACT ---------- */
+  .contact-inner { max-width: 780px; }
+  .contact-inner h2 { font-size: clamp(2.4rem, 6vw, 4.4rem); }
+  .contact-inner .sub { margin-top: 18px; color: var(--muted); font-size: 1.05rem; max-width: 50ch; line-height: 1.6; }
+  .contact-details { margin-top: 24px; color: var(--ink); font-size: 1.1rem; line-height: 1.8; }
+  .contact-email {
+    display: inline-block; margin-top: 24px; font-family: 'Space Grotesk', sans-serif; font-size: clamp(1.4rem, 3vw, 2rem);
+    border-bottom: 1px solid var(--line); padding-bottom: 6px; transition: color .25s ease, border-color .25s ease, text-shadow .25s ease;
+  }
+  .contact-email:hover { color: var(--accent); border-color: var(--accent); text-shadow: 0 0 15px var(--accent-soft); }
+  .contact-links { display: flex; gap: 26px; margin-top: 40px; }
+  .contact-links a { font-size: .92rem; color: var(--muted); transition: color .25s ease; text-transform: uppercase; letter-spacing: 0.05em; }
+  .contact-links a:hover { color: var(--accent-secondary); }
+</style>
+</head>
+<body>
+
+<noscript>
+  <div style="position:fixed;inset:0;background:#030308;color:#00e5ff;display:flex;align-items:center;justify-content:center;padding:40px;text-align:center;">
+    This dynamic AI portfolio requires JavaScript for WebGL rendering and physics-based interactions.
+  </div>
+</noscript>
+
+<div id="preloader"><span>Initializing System</span></div>
+
+<canvas id="bg-canvas"></canvas>
+
+<!-- Ensure custom cursor is at the bottom of the DOM so it renders over other absolute elements without JS interference -->
+<div class="cursor-dot" id="cursorDot"></div>
+<div class="cursor-ring" id="cursorRing"></div>
+
+<!-- Modal Overlay -->
+<div class="modal-overlay" id="projectModal">
+  <div class="modal-content">
+    <button class="modal-close" id="modalClose">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+    </button>
+    <div class="modal-body">
+      <h3 id="modalTitle">Project Title</h3>
+      <div class="modal-tags" id="modalTags"></div>
+      <div class="modal-desc" id="modalDesc"></div>
+    </div>
+  </div>
+</div>
+
+<button id="soundToggle" type="button" aria-label="Mute sound effects">
+  <svg id="soundIconOn" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 9v6h4l5 5V4L8 9H4z"/><path d="M16.5 8.5a5 5 0 0 1 0 7"/><path d="M19 6a9 9 0 0 1 0 12"/></svg>
+  <svg id="soundIconOff" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" style="display:none;"><path d="M4 9v6h4l5 5V4L8 9H4z"/><path d="M16 9l5 6M21 9l-5 6"/></svg>
+</button>
+
+<nav class="progress-nav" id="progressNav">
+  <i class="active"></i><i></i><i></i><i></i>
+</nav>
+
+<main class="scroll-container" id="scrollContainer">
+
+  <section class="section section--hero">
+    <div class="hero-copy">
+      <h1>Aryus Kumar Samal<br><span>AI Engineer</span></h1>
+      <p>AI Engineer focused on agentic AI, multi-agent systems, tool-using LLMs, and autonomous workflow automation.</p>
+    </div>
+  </section>
+
+  <section class="section section--about">
+    <div class="about-grid">
+      <div class="about-text">
+        <h2>Operational AI</h2>
+        <div class="about-desc">
+          <p>
+            I focus on bridging the gap between prototypes and production. I have hands-on experience building agents with Python and modern agent frameworks, integrating external APIs and databases, and evaluating agent trajectories for task success, reliability, and safety.
+          </p>
+          <p>
+            I possess a strong foundation in PyTorch, Hugging Face, RAG, LLM evaluation, backend systems, and cloud deployment. I hold a B.Tech in Computer Science and Engineering from Lovely Professional University (2022-2026).
+          </p>
+        </div>
+      </div>
+      <div class="skills-container">
+        <h3>Agentic AI & ML</h3>
+        <div class="skills">
+          <span>AI Agents</span><span>Multi-Agent Systems</span><span>LangChain</span><span>CrewAI</span>
+          <span>AutoGen</span><span>Tool Use</span><span>Planning</span><span>Memory</span>
+          <span>RAG</span><span>PyTorch</span><span>Fine-Tuning</span><span>Embeddings</span>
+        </div>
+        <h3>Backend & DevOps</h3>
+        <div class="skills">
+          <span>Python</span><span>Java</span><span>SQL</span><span>C++</span>
+          <span>FastAPI</span><span>Node.js</span><span>Spring Boot</span>
+          <span>Docker</span><span>GitHub Actions</span><span>AWS / GCP</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section section--projects">
+    <div class="projects-header">
+      <h2>Production Systems</h2>
+      <p class="carousel-hint" id="carouselHint">Hover here, then scroll to spin. Click a card for architecture details.</p>
+    </div>
+    <div class="carousel-stage" id="carouselStage">
+      <div class="carousel" id="carousel"></div>
+    </div>
+  </section>
+
+  <section class="section section--contact">
+    <div class="contact-inner">
+      <h2>Initialize Contact.</h2>
+      <p class="sub">Whether you're scaling an autonomous pipeline or implementing retrieval augmented generation, let's build something robust.</p>
+      
+      <div class="contact-details">
+        Based in Bengaluru, India<br>
+        Phone: +91-7986551661
+      </div>
+
+      <a class="contact-email" href="mailto:aryuskumar1122@gmail.com">aryuskumar1122@gmail.com</a>
+      
+      <div class="contact-links">
+        <a href="https://github.com/aryuskumar1122" target="_blank" rel="noopener">GitHub</a>
+        <a href="https://www.linkedin.com/in/aryuskumarsamal/" target="_blank" rel="noopener">LinkedIn</a>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+(function(){
+  'use strict';
+
+  var PROJECTS = [
+    { 
+      title: 'Model Regression Detection System', 
+      desc: 'A CI/CD-style pipeline that continuously tests any LLM-powered feature against a golden dataset to detect quality regressions before bad outputs reach users.', 
+      tags: ['Python', 'OpenAI', 'GitHub Actions'], 
+      fullDesc: '<p>Every AI team ships prompt changes blind. This architecture resolves that by implementing evaluation as code.</p><ul><li><strong>Golden Dataset:</strong> Versioned JSON containing hand-curated edge cases to establish a ground-truth baseline.</li><li><strong>Multi-Dimensional Scoring:</strong> Evaluates prompt adjustments using exact matching and LLM-as-a-judge scoring on 1-5 scales.</li><li><strong>Alerting & CI/CD:</strong> Operates as a GitHub Action, diffing outputs against previous runs, alerting via Slack webhooks, and blocking PRs if critical regressions are detected.</li></ul>'
+    },
+    { 
+      title: 'LLM Cost Autopilot', 
+      desc: 'An intelligent routing layer that analyzes each incoming request\'s complexity and routes it to the cheapest model capable of handling it at acceptable quality.', 
+      tags: ['FastAPI', 'Scikit-learn', 'Docker'], 
+      fullDesc: '<p>A dynamic gateway designed to mitigate over-provisioned LLM calls, reducing API costs without sacrificing output quality.</p><ul><li><strong>Complexity Classifier:</strong> Utilizes Scikit-learn to parse prompts into tiers (simple, moderate, complex).</li><li><strong>Dynamic Routing:</strong> Routes simple tasks to local/cheaper models (e.g., Llama/Haiku) and complex tasks to premium models (e.g., GPT-4o).</li><li><strong>Quality Verification:</strong> Async verification loop tests lower-tier outputs against premium models, escalating on failures and continuously retraining the routing logic.</li></ul>'
+    },
+    { 
+      title: 'Failure Forensics Tool', 
+      desc: 'An observability layer for multi-step AI pipelines that traces every intermediate step to identify exactly where failures originate when the final output is bad.', 
+      tags: ['OpenTelemetry', 'SQLite', 'LangChain'], 
+      fullDesc: '<p>A diagnostic engine that traces complex, multi-agent AI pipelines to find the specific node where data degrades.</p><ul><li><strong>Tracing Layer:</strong> Uses OpenTelemetry to wrap spans around each pipeline step, storing serialized inputs, outputs, and raw LLM responses.</li><li><strong>Backward Trace Analyzer:</strong> If an end output is flagged, it works backward through spans, using LLM-as-a-judge to identify the exact step where output quality plummeted.</li><li><strong>Visual Explorer:</strong> Provides a UI for engineers to see pipeline nodes colored by health, expediting root cause analysis.</li></ul>'
+    },
+    { 
+      title: 'Hybrid Search RAG Pipeline', 
+      desc: 'A production-grade system that indexes internal documentation with both dense vector and sparse keyword search, generating grounded answers with citations.', 
+      tags: ['ChromaDB', 'BM25', 'FastAPI'], 
+      fullDesc: '<p>An enterprise Retrieval-Augmented Generation pipeline solving the limitations of basic semantic search.</p><ul><li><strong>Hybrid Retrieval:</strong> Combines dense vector search (ChromaDB) with exact keyword matching (BM25) using Reciprocal Rank Fusion (RRF).</li><li><strong>Citation Verification:</strong> Forces the LLM to provide bracketed citations. A secondary LLM pass verifies that the cited chunk actually supports the generated claim.</li><li><strong>Confidence Scoring:</strong> Returns answers with a composite score based on retrieval confidence, citation coverage, and completeness.</li></ul>'
+    },
+    { 
+      title: 'AI Feature Flag System', 
+      desc: 'A feature flag platform supporting gradual percentage-based rollouts that triggers automatic rollback if AI output quality degrades below a threshold.', 
+      tags: ['Redis', 'PostgreSQL', 'LLM-as-judge'], 
+      fullDesc: '<p>A progressive delivery system tailored for the non-binary nature of AI feature success.</p><ul><li><strong>Staged Rollouts:</strong> Incremental traffic exposure (e.g., 1% -> 10% -> 100%) managed by a Redis-backed evaluation engine.</li><li><strong>Async Quality Evaluator:</strong> Continuously monitors user interactions and LLM outputs in real-time behind the flag.</li><li><strong>Auto-Rollback:</strong> Automatically halts rollout and reverts traffic to baseline if rolling quality windows (e.g., P10 quality scores) dip below configured thresholds.</li></ul>'
+    },
+    { 
+      title: 'Agent Orchestration System', 
+      desc: 'A multi-agent orchestration platform where a supervisor agent decomposes complex tasks and delegates to specialized tool-using agents with persistent memory.', 
+      tags: ['LangGraph', 'Celery', 'ChromaDB'], 
+      fullDesc: '<p>A robust state machine for coordinating autonomous agents through complex workflows.</p><ul><li><strong>Supervisor & Specialists:</strong> LangGraph workflow where a supervisor breaks down tasks and delegates them to specialized agents with specific tool access.</li><li><strong>Dual Memory System:</strong> Redis handles short-term working memory for active tasks, while ChromaDB stores semantic lessons learned for future planning.</li><li><strong>Human-in-the-Loop:</strong> Pauses execution and pushes to a review queue when the supervisor\'s confidence drops or a sensitive action is required.</li></ul>'
+    }
+  ];
+  
+  var SIGNAL_COLORS = ['#00e5ff', '#9d00ff', '#ff00aa', '#00e5ff', '#9d00ff', '#ff00aa'];
+  var reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var isCoarsePointer = window.matchMedia('(pointer: coarse)').matches;
+
+  var scrollContainer = document.getElementById('scrollContainer');
+  var sections = Array.prototype.slice.call(document.querySelectorAll('.section'));
+  var dots = Array.prototype.slice.call(document.querySelectorAll('.progress-nav i'));
+  var cursorDot = document.getElementById('cursorDot');
+  var cursorRing = document.getElementById('cursorRing');
+  var carouselStage = document.getElementById('carouselStage');
+  var carouselEl = document.getElementById('carousel');
+  var carouselHint = document.getElementById('carouselHint');
+
+  // Modal Elements
+  var projectModal = document.getElementById('projectModal');
+  var modalClose = document.getElementById('modalClose');
+  var modalTitle = document.getElementById('modalTitle');
+  var modalTags = document.getElementById('modalTags');
+  var modalDesc = document.getElementById('modalDesc');
+
+  if (!isCoarsePointer) document.body.classList.add('has-fine-pointer');
+
+  /* --- Web Audio API Setup --- */
+  function SoundEngine(){ this.ctx = null; this.master = null; this.enabled = true; }
+  SoundEngine.prototype.ensureContext = function(){
+    if (!this.ctx) {
+      var AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return;
+      this.ctx = new AC();
+      this.master = this.ctx.createGain();
+      this.master.gain.value = 0.5;
+      this.master.connect(this.ctx.destination);
+    }
+    if (this.ctx.state === 'suspended') this.ctx.resume();
+  };
+  SoundEngine.prototype.tone = function(freq, dur, type, peak){
+    if (!this.enabled || !this.ctx) return;
+    var t0 = this.ctx.currentTime;
+    var osc = this.ctx.createOscillator();
+    var gain = this.ctx.createGain();
+    osc.type = type || 'sine';
+    osc.frequency.setValueAtTime(freq, t0);
+    gain.gain.setValueAtTime(0.0001, t0);
+    gain.gain.exponentialRampToValueAtTime(peak || 0.2, t0 + 0.012);
+    gain.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+    osc.connect(gain); gain.connect(this.master);
+    osc.start(t0); osc.stop(t0 + dur + 0.02);
+  };
+  SoundEngine.prototype.tick = function(){ this.tone(900 + Math.random()*150, 0.04, 'square', 0.08); };
+  SoundEngine.prototype.hover = function(){ this.tone(1400, 0.05, 'sine', 0.04); };
+  SoundEngine.prototype.click = function(){ this.tone(600, 0.1, 'triangle', 0.15); };
+
+  var sfx = new SoundEngine();
+  function unlockAudio(){ sfx.ensureContext(); window.removeEventListener('pointerdown', unlockAudio); }
+  window.addEventListener('pointerdown', unlockAudio);
+
+  document.getElementById('soundToggle').addEventListener('click', function(e){
+    sfx.enabled = !sfx.enabled; sfx.ensureContext();
+    document.getElementById('soundIconOn').style.display = sfx.enabled ? 'block' : 'none';
+    document.getElementById('soundIconOff').style.display = sfx.enabled ? 'none' : 'block';
+  });
+
+  /* --- Custom Cursor --- */
+  var mouseX = window.innerWidth/2, mouseY = window.innerHeight/2, ringX = mouseX, ringY = mouseY, cursorSeen = false;
+  window.addEventListener('mousemove', function(e){
+    mouseX = e.clientX; mouseY = e.clientY;
+    cursorDot.style.transform = 'translate(' + mouseX + 'px,' + mouseY + 'px) translate(-50%,-50%)';
+    if (!cursorSeen) { cursorSeen = true; cursorDot.classList.add('visible'); cursorRing.classList.add('visible'); document.body.classList.add('cursor-ready'); }
+  });
+  function animateCursor(){
+    var ease = reducedMotion ? 1 : 0.16;
+    ringX += (mouseX - ringX) * ease; ringY += (mouseY - ringY) * ease;
+    cursorRing.style.transform = 'translate(' + ringX + 'px,' + ringY + 'px) translate(-50%,-50%)';
+    requestAnimationFrame(animateCursor);
+  }
+  animateCursor();
+
+  function wireHoverTargets(root){
+    root.querySelectorAll('a, button, .project-card, .modal-close').forEach(function(el){
+      el.addEventListener('mouseenter', function(){ cursorRing.classList.add('is-hover'); });
+      el.addEventListener('mouseleave', function(){ cursorRing.classList.remove('is-hover'); });
+    });
+  }
+
+  carouselStage.addEventListener('mouseenter', function(){
+    cursorRing.classList.add('is-drag'); carouselHint.classList.add('is-active');
+    carouselHint.textContent = 'Scroll to spin. Click a card for details.';
+  });
+  carouselStage.addEventListener('mouseleave', function(){
+    cursorRing.classList.remove('is-drag'); carouselHint.classList.remove('is-active');
+    carouselHint.textContent = 'Hover here, then scroll to spin. Click a card for architecture details.';
+  });
+
+  /* --- Projects Carousel --- */
+  var total = PROJECTS.length, cardEls = [], carouselRotation = 0, carouselTarget = 0;
+  function setResponsiveRadius(){
+    var w = window.innerWidth; var radius = w < 640 ? 220 : (w < 1000 ? 320 : 450);
+    document.documentElement.style.setProperty('--radius', radius + 'px');
+  }
+  setResponsiveRadius();
+
+  PROJECTS.forEach(function(p, i){
+    var card = document.createElement('div'); card.className = 'project-card';
+    card.style.setProperty('--i', i); card.style.setProperty('--total', total);
+    card.style.setProperty('--card-accent', SIGNAL_COLORS[i % SIGNAL_COLORS.length]);
+    card.innerHTML = `
+      <div>
+        <h3>${p.title}</h3>
+        <p>${p.desc}</p>
+        <div class="tags">${p.tags.map(t=>`<span>${t}</span>`).join('')}</div>
+      </div>
+      <div class="view-more">View Architecture +</div>
+    `;
+    
+    card.addEventListener('mouseenter', function(){ card.style.setProperty('--hover-boost', '1.05'); sfx.hover(); });
+    card.addEventListener('mouseleave', function(){ card.style.setProperty('--hover-boost', '1'); });
+    
+    // Open Modal Logic
+    card.addEventListener('click', function(){
+      sfx.click();
+      modalTitle.textContent = p.title;
+      modalTags.innerHTML = p.tags.map(t=>`<span>${t}</span>`).join('');
+      modalDesc.innerHTML = p.fullDesc;
+      projectModal.classList.add('active');
+    });
+
+    carouselEl.appendChild(card); cardEls.push(card);
+  });
+  carouselEl.style.setProperty('--total', total);
+  wireHoverTargets(document);
+
+  // Close Modal Logic
+  modalClose.addEventListener('click', function(){
+    projectModal.classList.remove('active');
+  });
+  projectModal.addEventListener('click', function(e){
+    if(e.target === projectModal) { projectModal.classList.remove('active'); }
+  });
+
+  // Scroll-Hijacking in the Carousel Box
+  carouselStage.addEventListener('wheel', function(e){
+    e.preventDefault();
+    var prev = carouselTarget;
+    carouselTarget += e.deltaY * 0.22;
+    if (Math.floor(carouselTarget/(360/total)) !== Math.floor(prev/(360/total))) sfx.tick();
+  }, { passive: false });
+
+  function animateCarousel(){
+    carouselRotation += (carouselTarget - carouselRotation) * (reducedMotion ? 0.35 : 0.08);
+    carouselEl.style.transform = 'rotateY(' + carouselRotation + 'deg)';
+    
+    for (var i = 0; i < cardEls.length; i++) {
+      var rad = (carouselRotation + (i * 360/total)) * Math.PI/180;
+      var focus = Math.max(0, Math.cos(rad));
+      cardEls[i].style.setProperty('--card-scale', (0.62 + 0.38*focus).toFixed(3));
+      cardEls[i].style.opacity = focus.toFixed(3);
+      // Ensure front cards are clickable
+      cardEls[i].style.zIndex = Math.round(focus*100);
+      cardEls[i].style.pointerEvents = focus > 0.8 ? 'auto' : 'none';
+    }
+    requestAnimationFrame(animateCarousel);
+  }
+
+  /* --- Three.js Background (Vibrant AI w/ Mouse Parallax) --- */
+  var scene, camera, renderer, particles;
+  var targetCamX = 0, targetCamY = 0; 
+  
+  function initThree(){
+    scene = new THREE.Scene();
+    scene.fog = new THREE.FogExp2(0x030308, 0.12);
+    camera = new THREE.PerspectiveCamera(55, window.innerWidth/window.innerHeight, 0.1, 100);
+    camera.position.z = 6;
+    renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('bg-canvas'), alpha: true, antialias: true });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setSize(window.innerWidth, window.innerHeight);
+
+    var count = reducedMotion ? 700 : 2500, positions = new Float32Array(count*3);
+    for (var i = 0; i < count; i++) {
+      var r = 3.5 + Math.random()*7.5, theta = Math.random()*Math.PI*2, phi = Math.acos((Math.random()*2)-1);
+      positions[i*3] = r*Math.sin(phi)*Math.cos(theta); positions[i*3+1] = r*Math.sin(phi)*Math.sin(theta); positions[i*3+2] = r*Math.cos(phi) - 2;
+    }
+    var geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    
+    // Vibrant particle material
+    var mat = new THREE.PointsMaterial({ 
+      color: 0x9d00ff, 
+      size: 0.035, 
+      transparent: true, 
+      opacity: 0.8, 
+      blending: THREE.AdditiveBlending 
+    });
+    particles = new THREE.Points(geo, mat); scene.add(particles);
+
+    // Track mouse position for parallax effect
+    window.addEventListener('mousemove', function(e){
+      targetCamX = (e.clientX / window.innerWidth - 0.5) * 1.5;
+      targetCamY = -(e.clientY / window.innerHeight - 0.5) * 1.5;
+    });
+  }
+
+  function animateThree(){
+    particles.rotation.y += 0.0008;
+    particles.rotation.x += 0.0003;
+    
+    // Mouse Parallax effect logic
+    if (!reducedMotion) {
+      camera.position.x += (targetCamX - camera.position.x) * 0.03;
+      camera.position.y += (targetCamY - camera.position.y) * 0.03;
+      camera.lookAt(0, 0, 0);
+    }
+
+    // Shift color based on scroll progression
+    var scrollRatio = scrollContainer.scrollTop / (scrollContainer.scrollHeight - scrollContainer.clientHeight) || 0;
+    particles.material.color.lerpColors(new THREE.Color(0x9d00ff), new THREE.Color(0x00e5ff), scrollRatio);
+    
+    renderer.render(scene, camera);
+    requestAnimationFrame(animateThree);
+  }
+  
+  window.addEventListener('resize', function(){
+    camera.aspect = window.innerWidth/window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    setResponsiveRadius();
+  });
+
+  /* --- Initialization --- */
+  var io = new IntersectionObserver(function(entries){
+    entries.forEach(function(entry){
+      if (entry.isIntersecting) {
+        var idx = sections.indexOf(entry.target);
+        dots.forEach(function(d, i){ d.classList.toggle('active', i === idx); });
+        if (idx === 2) carouselStage.classList.add('revealed');
+      }
+    });
+  }, { threshold: 0.6 });
+  sections.forEach(function(s){ io.observe(s); });
+
+  initThree(); animateThree(); animateCarousel();
+  setTimeout(function(){ document.getElementById('preloader').classList.add('hidden'); }, 800);
+
+})();
+</script>
+</body>
+</html>
