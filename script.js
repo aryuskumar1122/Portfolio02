@@ -102,7 +102,7 @@
   
     var sfx = new SoundEngine();
     var bgAudio = document.getElementById('bgAudio');
-    bgAudio.volume = 0.8;
+    bgAudio.volume = 0.2;
     function unlockAudio(){ 
         sfx.ensureContext(); 
         if (sfx.enabled && bgAudio.paused) {
