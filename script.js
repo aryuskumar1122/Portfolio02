@@ -101,13 +101,29 @@
     SoundEngine.prototype.click = function(){ this.tone(600, 0.1, 'triangle', 0.15); };
   
     var sfx = new SoundEngine();
-    function unlockAudio(){ sfx.ensureContext(); window.removeEventListener('pointerdown', unlockAudio); }
+    var bgAudio = document.getElementById('bgAudio');
+    bgAudio.volume = 0.8;
+    function unlockAudio(){ 
+        sfx.ensureContext(); 
+        if (sfx.enabled && bgAudio.paused) {
+          bgAudio.play().catch(function(e) { console.warn("Autoplay prevented:", e); });
+        }
+        window.removeEventListener('pointerdown', unlockAudio); 
+      }
     window.addEventListener('pointerdown', unlockAudio);
   
     document.getElementById('soundToggle').addEventListener('click', function(e){
-      sfx.enabled = !sfx.enabled; sfx.ensureContext();
-      document.getElementById('soundIconOn').style.display = sfx.enabled ? 'block' : 'none';
-      document.getElementById('soundIconOff').style.display = sfx.enabled ? 'none' : 'block';
+        sfx.enabled = !sfx.enabled; 
+        sfx.ensureContext();
+        document.getElementById('soundIconOn').style.display = sfx.enabled ? 'block' : 'none';
+        document.getElementById('soundIconOff').style.display = sfx.enabled ? 'none' : 'block';
+        
+        // Play or pause the background track based on the toggle state
+        if (sfx.enabled) {
+          bgAudio.play().catch(function(e){ console.warn(e); });
+        } else {
+          bgAudio.pause();
+        }
     });
   
     /* --- Custom Cursor --- */
